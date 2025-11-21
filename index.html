@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BNET Innovate - Latency Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #38bdf8;
+            --danger: #f43f5e;
+            --success: #22c55e;
+            --text: #f1f5f9;
+        }
+
+        * { box-sizing: border-box; touch-action: manipulation; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 70%);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .brand-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #94a3b8;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        h1 { 
+            margin: 0; 
+            font-size: 1.8rem; 
+            font-weight: 800; 
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+        /* Ping Indicator */
+        .ping-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #334155;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--success);
+            box-shadow: 0 0 8px var(--success);
+            transition: 0.3s;
+        }
+
+        .status-dot.lag {
+            background-color: var(--danger);
+            box-shadow: 0 0 8px var(--danger);
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 4px;
+            display: flex;
+            margin-bottom: 40px;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: none;
+            color: #64748b;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: var(--primary);
+            color: #0f172a;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+
+        .toggle-btn.active-lag {
+            background: var(--danger);
+            color: white;
+            box-shadow: 0 0 15px rgba(244, 63, 94, 0.4);
+        }
+
+        /* Game Area */
+        .track-container {
+            position: relative;
+            width: 90%;
+            max-width: 380px;
+            height: 40px; 
+            background: #1e293b;
+            border-radius: 20px;
+            margin-bottom: 50px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+            border: 1px solid #334155;
+            /* Fix for Safari overflow clipping */
+            -webkit-mask-image: -webkit-radial-gradient(white, black);
+        }
+
+        .target-zone {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 32px;
+            transform: translateX(-50%);
+            background: rgba(34, 197, 94, 0.15);
+            border-left: 2px solid var(--success);
+            border-right: 2px solid var(--success);
+            z-index: 1;
+        }
+
+        .slider {
+            position: absolute;
+            top: -5px; 
+            bottom: -5px;
+            width: 16px;
+            background: #fff;
+            border-radius: 8px;
+            left: 0;
+            z-index: 2;
+            box-shadow: 0 0 15px rgba(255,255,255,0.8);
+            /* Hardware Acceleration Hooks */
+            will-change: transform;
+            transform: translate3d(0,0,0); 
+            backface-visibility: hidden;
+        }
+
+        /* Action Button */
+        .main-btn {
+            width: 80%;
+            max-width: 300px;
+            height: 70px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: white;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+            transition: transform 0.1s, box-shadow 0.1s;
+            position: relative;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .main-btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+        }
+        
+        #result {
+            margin-top: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            height: 24px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="ping-badge">
+        <div class="status-dot" id="pingDot"></div>
+        <span id="pingText">3ms</span>
+    </div>
+
+    <div class="header">
+        <div class="brand-title">BNET Innovate</div>
+        <h1>Latency Simulator</h1>
+        <div class="subtitle">Tap STOP when the bar hits green</div>
+    </div>
+
+    <div class="toggle-container">
+        <!-- Note: Using onpointerdown for faster response than onclick -->
+        <button class="toggle-btn active" id="btnLow" onpointerdown="setLatency(false)">Fiber (3ms)</button>
+        <button class="toggle-btn" id="btnHigh" onpointerdown="setLatency(true)">High Latency (300ms)</button>
+    </div>
+
+    <div class="track-container">
+        <div class="target-zone"></div>
+        <div class="slider" id="slider"></div>
+    </div>
+
+    <button class="main-btn" id="actionBtn">STOP</button>
+
+    <div id="result"></div>
+
+    <script>
+        let isHighLatency = false;
+        let isPlaying = false;
+        let animationFrameId = null;
+        let sliderPos = 0;
+        let direction = 1;
+        let lastTime = 0;
+        
+        // Speed in Pixels Per Second (Consistent across all devices)
+        const PIXELS_PER_SECOND = 300; 
+        
+        const slider = document.getElementById('slider');
+        const sliderWidth = 16;
+        let containerWidth = document.querySelector('.track-container').offsetWidth;
+        let maxPos = containerWidth - sliderWidth;
+        
+        // Setup Button Listener (Using pointerdown for zero delay)
+        const actionBtn = document.getElementById('actionBtn');
+        actionBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault(); // prevents double-fire on some touchscreens
+            handleInput();
+        });
+
+        window.addEventListener('resize', () => {
+            containerWidth = document.querySelector('.track-container').offsetWidth;
+            maxPos = containerWidth - sliderWidth;
+            if (sliderPos > maxPos) sliderPos = maxPos;
+        });
+
+        // DELTA TIME LOOP (Fixes the 60hz vs 120hz speed issue)
+        function animate(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const deltaTime = (timestamp - lastTime) / 1000; // Convert to seconds
+            lastTime = timestamp;
+
+            if (isPlaying) {
+                // Move based on time passed, not frames passed
+                const moveAmount = PIXELS_PER_SECOND * deltaTime;
+                sliderPos += moveAmount * direction;
+
+                if (sliderPos >= maxPos) {
+                    sliderPos = maxPos;
+                    direction = -1;
+                } else if (sliderPos <= 0) {
+                    sliderPos = 0;
+                    direction = 1;
+                }
+
+                // translate3d enables hardware acceleration
+                slider.style.transform = `translate3d(${sliderPos}px, 0, 0)`;
+            }
+            
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function startGameLoop() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            isPlaying = true;
+            lastTime = 0; // Reset time delta
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function stopGameLoop() {
+            isPlaying = false;
+            // We keep the loop running but stop updating position
+            // This prevents "jump" when restarting
+        }
+
+        function handleInput() {
+            if (!isPlaying) {
+                resetGame();
+                return;
+            }
+
+            // 1. Immediate Visual Feedback (Client Side)
+            actionBtn.style.transform = "scale(0.96)";
+            
+            // 2. Simulated Network Delay
+            const delay = isHighLatency ? 300 : 3;
+            
+            // Capture state to prevent multiple clicks
+            const wasPlaying = isPlaying; 
+
+            setTimeout(() => {
+                if(!wasPlaying) return;
+                
+                stopGameLoop(); 
+                checkWin();
+                
+                actionBtn.innerText = "TRY AGAIN";
+                actionBtn.style.transform = "scale(1)"; 
+            }, delay);
+        }
+
+        function checkWin() {
+            const containerRect = document.querySelector('.track-container').getBoundingClientRect();
+            const zoneRect = document.querySelector('.target-zone').getBoundingClientRect();
+            const sliderRect = slider.getBoundingClientRect();
+
+            const sliderCenter = sliderRect.left + (sliderRect.width / 2);
+            const zoneLeft = zoneRect.left;
+            const zoneRight = zoneRect.right;
+
+            const resultDiv = document.getElementById('result');
+
+            if (sliderCenter >= zoneLeft && sliderCenter <= zoneRight) {
+                resultDiv.style.color = "#22c55e";
+                resultDiv.innerHTML = "SUCCESS <span style='font-size:0.8em'>Target Acquired</span>";
+                actionBtn.style.background = "linear-gradient(135deg, #22c55e, #16a34a)";
+            } else {
+                resultDiv.style.color = "#f43f5e";
+                if(isHighLatency) {
+                    resultDiv.innerHTML = "MISSED <span style='color:#94a3b8; font-weight:400'> (Lag Detected)</span>";
+                } else {
+                    resultDiv.innerText = "MISSED";
+                }
+                actionBtn.style.background = "linear-gradient(135deg, #f43f5e, #e11d48)";
+            }
+        }
+
+        function resetGame() {
+            actionBtn.innerText = "STOP";
+            actionBtn.style.background = "linear-gradient(135deg, #3b82f6, #2563eb)";
+            document.getElementById('result').innerText = "";
+            
+            // Reset time so bar doesn't "jump"
+            lastTime = performance.now();
+            isPlaying = true;
+        }
+
+        function setLatency(high) {
+            isHighLatency = high;
+            const btnLow = document.getElementById('btnLow');
+            const btnHigh = document.getElementById('btnHigh');
+            const pingText = document.getElementById('pingText');
+            const pingDot = document.getElementById('pingDot');
+
+            if (high) {
+                btnLow.classList.remove('active');
+                btnHigh.classList.add('active-lag');
+                pingText.innerText = "300ms";
+                pingText.style.color = "#f43f5e";
+                pingDot.classList.add('lag');
+            } else {
+                btnHigh.classList.remove('active-lag');
+                btnLow.classList.add('active');
+                pingText.innerText = "3ms";
+                pingText.style.color = "#22c55e";
+                pingDot.classList.remove('lag');
+            }
+            resetGame();
+        }
+
+        // Init
+        startGameLoop();
+    </script>
+</body>
+</html>
